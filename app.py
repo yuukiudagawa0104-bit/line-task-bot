@@ -46,6 +46,16 @@ def get_or_create_user(user_id):
         conn.close()
         return user[0]
 
+def set_user_mode(user_id, mode):
+    conn = sqlite3.connect("bot.db")
+    cur = conn.cursor()
+    cur.execute(
+        "UPDATE users SET mode = ? WHERE user_id = ?",
+        (mode, user_id)
+    )
+    conn.commit()
+    conn.close()
+
 # =========================
 # 基本ルーティング
 # =========================
@@ -82,8 +92,16 @@ def webhook():
 
             # ★ ここが今回の本題
             mode = get_or_create_user(user_id)
+            if text == "タスク追加":
+                set_user_mode(user_id, "add_task")
+                reply_message(reply_token, "タスク登録を開始します。内容を送ってください。")
+                continue
 
-            # 仮：今はそのままオウム返し
+            if text == "停止":
+                set_user_mode(user_id, "pause")
+                reply_message(reply_token, "リマインドを停止しました。")
+                continue
+
             reply_message(reply_token, f"[mode: {mode}]\n{text}")
 
     return "OK"
