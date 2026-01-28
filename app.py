@@ -83,6 +83,17 @@ def add_task(user_id, content):
     conn.commit()
     conn.close()
 
+def get_tasks(user_id):
+    conn = sqlite3.connect("bot.db")
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT id, content FROM tasks WHERE user_id = ? AND done = 0 ORDER BY id",
+        (user_id,)
+    )
+    tasks = cur.fetchall()
+    conn.close()
+    return tasks
+
 # =========================
 # 基本ルーティング
 # =========================
@@ -135,6 +146,16 @@ def webhook():
                 reply_message(reply_token, "タスクを登録しました。")
                 continue
 
+            if text == "一覧":
+                tasks = get_tasks(user_id)
+                if not tasks:
+                    reply_message(reply_token, "未完了のタスクはありません。")
+                else:
+                    msg = "【タスク一覧】\n"
+                    for t in tasks:
+                        msg += f"{t[0]}. {t[1]}\n"
+                    reply_message(reply_token, msg)
+                continue
 
             reply_message(reply_token, f"[mode: {mode}]\n{text}")
 
