@@ -56,6 +56,33 @@ def set_user_mode(user_id, mode):
     conn.commit()
     conn.close()
 
+def init_db():
+    conn = sqlite3.connect("bot.db")
+    cur = conn.cursor()
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS tasks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT,
+        content TEXT,
+        created_at TEXT,
+        done INTEGER
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
+def add_task(user_id, content):
+    conn = sqlite3.connect("bot.db")
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO tasks (user_id, content, created_at, done) VALUES (?, ?, ?, ?)",
+        (user_id, content, datetime.now().isoformat(), 0)
+    )
+    conn.commit()
+    conn.close()
+
 # =========================
 # 基本ルーティング
 # =========================
@@ -102,6 +129,13 @@ def webhook():
                 reply_message(reply_token, "リマインドを停止しました。")
                 continue
 
+            if mode == "add_task":
+                add_task(user_id, text)
+                set_user_mode(user_id, "normal")
+                reply_message(reply_token, "タスクを登録しました。")
+                continue
+
+
             reply_message(reply_token, f"[mode: {mode}]\n{text}")
 
     return "OK"
@@ -129,5 +163,7 @@ def reply_message(reply_token, text):
 # =========================
 # 起動
 # =========================
+init_db()
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
