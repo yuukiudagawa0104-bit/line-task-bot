@@ -94,6 +94,16 @@ def get_tasks(user_id):
     conn.close()
     return tasks
 
+def complete_task(user_id, task_id):
+    conn = sqlite3.connect("bot.db")
+    cur = conn.cursor()
+    cur.execute(
+        "UPDATE tasks SET done = 1 WHERE id = ? AND user_id = ?",
+        (task_id, user_id)
+    )
+    conn.commit()
+    conn.close()
+
 # =========================
 # 基本ルーティング
 # =========================
@@ -156,6 +166,17 @@ def webhook():
                         msg += f"{t[0]}. {t[1]}\n"
                     reply_message(reply_token, msg)
                 continue
+
+            if text.startswith("完了"):
+                parts = text.split()
+                if len(parts) == 2 and parts[1].isdigit():
+                    task_id = int(parts[1])
+                    complete_task(user_id, task_id)
+                    reply_message(reply_token, f"タスク {task_id} を完了にしました。")
+                else:
+                    reply_message(reply_token, "使い方：完了 1")
+                continue
+
 
             reply_message(reply_token, f"[mode: {mode}]\n{text}")
 
